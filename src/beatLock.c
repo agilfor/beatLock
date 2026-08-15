@@ -29,14 +29,14 @@ void load_pattern(key_press target_pattern[MAX_KEYS], size_t *pattern_size) {
 	if (access(PATH, F_OK) == 0) {
 		FILE *fptr;
 		fptr = fopen(PATH, "r");
-		key_press keys[MAX_KEYS];
+		memset(target_pattern, 0, sizeof(target_pattern));
 		size_t n = 0;
 		int c;
 		double dwell, flight;
 		while (n < MAX_KEYS && fscanf(fptr, "%d %lf %lf\n", &c, &dwell, &flight) == 3) {
-			keys[n].key = c;
-			keys[n].dwell = dwell;
-			keys[n].flight = flight;
+			target_pattern[n].key = c;
+			target_pattern[n].dwell = dwell;
+			target_pattern[n].flight = flight;
 			n++;
 		}
 		*pattern_size = n;
@@ -97,6 +97,7 @@ void parse_password(double raw[MAX_KEYS][3], key_press pw[MAX_KEYS]) {
 			pw[i-1].flight = 0.0;
 			break;
 		}
+		printf("%d %lf %lf", pw[i].key, pw[i].dwell, pw[i].flight);
 		pw[i].key = (int) raw[i][0];
 		pw[i].dwell = raw[i][2] - raw[i][1];
 		pw[i].flight = raw[i][1] - raw[i-1][1];
@@ -184,12 +185,12 @@ int main() {
 	} else {
 		int valid = check_password(expected, recorded, expected_size, n);
 		printf("%d", valid);
-		if (valid == 0) {
+		if (valid == 1) {
 			printf("ACCESS GRANTED");
-			return 1;
-		} else {
-			printf("ACCESS GRANTED\n");
 			return 0;
+		} else {
+			printf("ACCESS DENIED\n");
+			return 1;
 		}
 	}
 }
