@@ -67,6 +67,8 @@ int find_kbd_fd() {
 			if (test_bit(KEY_A, key_bits) && test_bit(KEY_ENTER, key_bits)) {
 				printf("Found valid keyboard at: %s\n", path);
 				fd = temp_fd;
+				int flags = fcntl(fd, F_GETFL, 0);
+				fcntl(fd, F_SETFL, flags & ~O_NONBLOCK);
 				break;
 			}
 		}
