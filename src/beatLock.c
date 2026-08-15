@@ -96,7 +96,6 @@ void parse_password(double raw[MAX_KEYS][3], key_press pw[MAX_KEYS]) {
 			pw[i-1].flight = 0.0;
 			break;
 		}
-		printf("%d %lf %lf", pw[i].key, pw[i].dwell, pw[i].flight);
 		pw[i].key = (int) raw[i][0];
 		pw[i].dwell = raw[i][2] - raw[i][1];
 		pw[i].flight = raw[i][1] - raw[i-1][1];
