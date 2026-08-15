@@ -44,7 +44,15 @@ void load_pattern(key_press target_pattern[MAX_KEYS], size_t *pattern_size) {
 	} else {
 		// file doesn't exist
 	}
-	
+}
+
+void store_pattern(key_press pattern[MAX_KEYS], size_t *pattern_size) {
+	FILE *fptr;
+	fptr = fopen(PATH, "w");
+	for (size_t i = 0; i < *pattern_size; i++) {
+		fprintf(fptr, "%d %lf %lf\n", pattern[i].key, pattern[i].dwell, pattern[i].flight);
+	}
+	fclose(fptr);
 }
 
 int find_kbd_fd() {
@@ -171,9 +179,17 @@ int main() {
 
 	parse_password(timestamps, recorded);
 	if (expected_size == 0) {
-		// save password and exit
+		store_pattern(recorded, &n);
+		fprintf("Successfully recorded password.\n");
 	} else {
 		int valid = check_password(expected, recorded, expected_size, n);
 		printf("%d", valid);
+		if (valid == 0) {
+			fprintf("ACCESS GRANTED");
+			return 1;
+		} else {
+			fprintf("ACCESS GRANTED\n");
+			return 0;
+		}
 	}
 }
