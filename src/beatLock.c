@@ -151,6 +151,15 @@ int perform_auth() {
 	size_t expected_size;
 	load_pattern(expected, &expected_size);
 
+	int tty_fd = open("/dev/tty", O_RDWR);
+	struct termios old_term, new_term;
+	if (tty_fd >= 0) {
+		tcgetattr(tty_fd, &old_term);
+		new_term = old_term;
+		new_term.c_lflag &= ~(ECHO | ICANON);
+		tcsetattr(tty_fd, TCSANOW, &new_term);
+	}
+
 	while (read(kbd_fd, &ev, sizeof(struct input_event)) > 0) {
 		if (ev.type == EV_KEY) {
 			double timestamp = (double)ev.time.tv_sec + (double)ev.time.tv_usec / 1000000.0;
@@ -176,6 +185,12 @@ int perform_auth() {
 		}
 	}
 	close(kbd_fd);
+
+	if (tty_fd >= 0) {
+		tcsetattr(tty_fd, TCSAFLUSH, &old_term);
+		close(tty_fd);
+	}
+
 	parse_password(timestamps, recorded);
 	if (expected_size == 0) {
 		store_pattern(recorded, &n);
