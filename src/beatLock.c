@@ -10,6 +10,7 @@
 #include <math.h>
 #include <syslog.h>
 
+#define PAM_SM_AUTH
 #include <security/pam_appl.h>
 #include <security/pam_modules.h>
 
