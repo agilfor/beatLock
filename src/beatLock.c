@@ -14,7 +14,7 @@
 #include <security/pam_appl.h>
 #include <security/pam_modules.h>
 
-#define PATH "/etc/beatLock"
+#define BASE_DIR "/etc/security/beatlock"
 #define MAX_KEYS 255
 #define TOLERANCE 0.05
 #define test_bit(bit, array)  ((array[(bit) / 8] >> ((bit) % 8)) & 1)
@@ -27,9 +27,15 @@ typedef struct {
 
 void load_pattern(key_press target_pattern[MAX_KEYS], size_t *pattern_size) {
 	*pattern_size = 0;
-	if (access(PATH, F_OK) == 0) {
+	
+	const char *username;
+	pam_get_user(pamh, &username, NULL);
+	char filepath[512];
+	snprintf(filepath, sizeof(filepath), "%s/%s.pattern", BASE_DIR, username);
+
+	if (access(filepath, F_OK) == 0) {
 		FILE *fptr;
-		fptr = fopen(PATH, "r");
+		fptr = fopen(filepath, "r");
 		size_t n = 0;
 		int c;
 		double dwell, flight;
@@ -44,15 +50,6 @@ void load_pattern(key_press target_pattern[MAX_KEYS], size_t *pattern_size) {
 	} else {
 		syslog(LOG_ERR, "beatLock: Pattern file could not be found.	");
 	}
-}
-
-void store_pattern(key_press pattern[MAX_KEYS], size_t *pattern_size) {
-	FILE *fptr;
-	fptr = fopen(PATH, "w");
-	for (size_t i = 0; i < *pattern_size; i++) {
-		fprintf(fptr, "%d %lf %lf\n", pattern[i].key, pattern[i].dwell, pattern[i].flight);
-	}
-	fclose(fptr);
 }
 
 int find_kbd_fd() {
@@ -164,14 +161,13 @@ int perform_auth() {
 		if (ev.type == EV_KEY) {
 			double timestamp = (double)ev.time.tv_sec + (double)ev.time.tv_usec / 1000000.0;
 			if (ev.value == 1) { // key down
+				if (ev.code == KEY_ENTER) break;
 				down_timestamps[ev.code] = timestamp;
 			}
 			else if (ev.value == 0) { // key up
-				if (ev.code == KEY_ENTER) break;
-				else if (ev.code == KEY_BACKSPACE) {
+				if (ev.code == KEY_BACKSPACE) {
 					memset(down_timestamps, 0, sizeof(down_timestamps));
 					memset(timestamps, 0, sizeof(timestamps));
-					memset(recorded, 0, sizeof(recorded));
 					n = 0;
 				}
 				else if (down_timestamps[ev.code] != 0.0) {
@@ -192,15 +188,11 @@ int perform_auth() {
 	}
 
 	parse_password(timestamps, recorded);
-	if (expected_size == 0) {
-		store_pattern(recorded, &n);
+	
+	if (check_password(expected, recorded, expected_size, n) == 1) {
 		return PAM_SUCCESS;
 	} else {
-		if (check_password(expected, recorded, expected_size, n) == 1) {
-			return PAM_SUCCESS;
-		} else {
-			return PAM_AUTH_ERR;
-		}
+		return PAM_AUTH_ERR;
 	}
 }
 
