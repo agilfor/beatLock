@@ -119,7 +119,7 @@ int main() {
 				if (down_timestamps[ev.code] != 0.0) {
 					timestamps[n][0] = (double) ev.code;
 					timestamps[n][1] = down_timestamps[ev.code];
-					timestamps[n][2] = timestamp
+					timestamps[n][2] = timestamp;
 					n++;
 					down_timestamps[ev.code] = 0.0;
 				}
