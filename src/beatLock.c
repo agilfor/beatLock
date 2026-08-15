@@ -75,7 +75,7 @@ int find_kbd_fd() {
 		if (test_bit(EV_KEY, ev_bits)) {
 			ioctl(temp_fd, EVIOCGBIT(EV_KEY, sizeof(key_bits)), key_bits);
 			if (test_bit(KEY_A, key_bits) && test_bit(KEY_ENTER, key_bits)) {
-				syslog(LOG_INFO, "Found valid keyboard at: %s", path);§
+				syslog(LOG_INFO, "Found valid keyboard at: %s", path);
 				fd = temp_fd;
 				int flags = fcntl(fd, F_GETFL, 0);
 				fcntl(fd, F_SETFL, flags & ~O_NONBLOCK);
