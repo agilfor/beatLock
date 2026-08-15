@@ -117,7 +117,10 @@ int main() {
 			}
 			else if (ev.value == 0) { // key up
 				if (down_timestamps[ev.code] != 0.0) {
-					timestamps[n++] = {(double) ev.code, down_timestamps[ev.code], timestamp};
+					timestamps[n][0] = (double) ev.code;
+					timestamps[n][1] = down_timestamps[ev.code];
+					timestamps[n][2] = timestamp
+					n++;
 					down_timestamps[ev.code] = 0.0;
 				}
 			}
