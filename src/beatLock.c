@@ -8,15 +8,15 @@
 #include <unistd.h>
 #include <time.h>
 #include <math.h>
+#include <syslog.h>
 
-#define PATH "./pattern"
+#include <security/pam_appl.h>
+#include <security/pam_modules.h>
+
+#define PATH "/etc/beatLock"
 #define MAX_KEYS 255
 #define TOLERANCE 0.15
 #define test_bit(bit, array)  ((array[(bit) / 8] >> ((bit) % 8)) & 1)
-
-// temporary to suppress Mac errors
-// #define EV_MAX 8
-// #define KEY_MAX 8
 
 typedef struct {
 	int key;
@@ -41,7 +41,7 @@ void load_pattern(key_press target_pattern[MAX_KEYS], size_t *pattern_size) {
 		*pattern_size = n;
 		fclose(fptr);
 	} else {
-		// file doesn't exist
+		syslog(LOG_ERR, "beatLock: Pattern file could not be found.	");
 	}
 }
 
@@ -74,7 +74,7 @@ int find_kbd_fd() {
 		if (test_bit(EV_KEY, ev_bits)) {
 			ioctl(temp_fd, EVIOCGBIT(EV_KEY, sizeof(key_bits)), key_bits);
 			if (test_bit(KEY_A, key_bits) && test_bit(KEY_ENTER, key_bits)) {
-				printf("Found valid keyboard at: %s\n", path);
+				syslog(LOG_INFO, "Found valid keyboard at: %s", path);§
 				fd = temp_fd;
 				int flags = fcntl(fd, F_GETFL, 0);
 				fcntl(fd, F_SETFL, flags & ~O_NONBLOCK);
@@ -104,23 +104,22 @@ void parse_password(double raw[MAX_KEYS][3], key_press pw[MAX_KEYS]) {
 
 int check_password(key_press expected[MAX_KEYS], key_press recorded[MAX_KEYS], size_t expected_size, size_t recorded_size) {
 	if (expected_size != recorded_size) {
-		printf("ERROR: Expected and recorded sizes do not match.\n");
+		syslog(LOG_ERR, "ERROR: Expected and recorded sizes do not match.");
 		return 0;
 	}
 	
 	double total_deviation = 0.0;
 	for (int i = 0; i < recorded_size; i++) {
 		if (expected[i].key != recorded[i].key) {
-			printf("ERROR: Incorrect password.\n");
+			syslog(LOG_ERR, "ERROR: Incorrect password.");
 			return 0;
 		}
 		total_deviation += fabs(expected[i].dwell - recorded[i].dwell);
 		total_deviation += fabs(expected[i].flight - recorded[i].flight);
 	}
 	total_deviation /= recorded_size * 2;
-	printf("Deviation: %lf; Tolerance: %lf\n", total_deviation, TOLERANCE);
 	if (total_deviation > TOLERANCE) {
-		printf("ERROR: Incorrect typing pattern.\n");
+		syslog(LOG_ERR, "ERROR: Incorrect typing pattern.");
 		return 0;
 	}
 	for (int i = 0; i < recorded_size; i++) {
@@ -134,11 +133,11 @@ double get_time_in_seconds(struct timespec *ts) {
 	return (double)ts->tv_sec + (double)ts->tv_nsec / 1000000000.0;
 }
 
-int main() {
+int perform_auth() {
 	int kbd_fd = find_kbd_fd();
 
 	if (kbd_fd == -1) {
-		printf("Could not locate input source. Are you root?\n");
+		syslog(LOG_ERR, "Could not locate input source.");
 		return 1;
 	}
 
@@ -175,20 +174,24 @@ int main() {
 			}
 		}
 	}
-
+	close(kbd_fd);
 	parse_password(timestamps, recorded);
 	if (expected_size == 0) {
 		store_pattern(recorded, &n);
-		printf("Successfully recorded password.\n");
+		return PAM_SUCCESS;
 	} else {
-		int valid = check_password(expected, recorded, expected_size, n);
-		printf("%d", valid);
-		if (valid == 1) {
-			printf("ACCESS GRANTED");
-			return 0;
+		if (check_password(expected, recorded, expected_size, n) == 1) {
+			return PAM_SUCCESS;
 		} else {
-			printf("ACCESS DENIED\n");
-			return 1;
+			return PAM_AUTH_ERR;
 		}
 	}
+}
+
+PAM_EXTERN int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc, const char **argv) {
+	return perform_auth();
+}
+
+PAM_EXTERN int pam_sm_setcred(pam_handle_t *pamh, int flags, int argc, const char **argv) {
+	return PAM_SUCCESS;
 }
