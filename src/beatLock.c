@@ -30,9 +30,9 @@ void load_pattern() {
 		fptr = fopen(PATH, "r");
 		key_press keys[MAX_KEYS];
 		size_t n = 0;
-		char c;
+		int c;
 		double dwell, flight;
-		while (fscanf(fptr, "%c %lf %lf\n", &c, &dwell, &flight)) {
+		while (n < MAX_KEYS && fscanf(fptr, "%d %lf %lf\n", &c, &dwell, &flight) == 3) {
 			keys[n].key = c;
 			keys[n].dwell = dwell;
 			keys[n].flight = flight;
