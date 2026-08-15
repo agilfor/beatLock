@@ -16,7 +16,7 @@
 
 #define PATH "/etc/beatLock"
 #define MAX_KEYS 255
-#define TOLERANCE 0.15
+#define TOLERANCE 0.012
 #define test_bit(bit, array)  ((array[(bit) / 8] >> ((bit) % 8)) & 1)
 
 typedef struct {
