@@ -24,7 +24,8 @@ typedef struct {
 	double flight;
 } key_press;
 
-void load_pattern() {
+void load_pattern(key_press target_pattern[MAX_KEYS], size_t *pattern_size) {
+	*pattern_size = 0;
 	if (access(PATH, F_OK) == 0) {
 		FILE *fptr;
 		fptr = fopen(PATH, "r");
@@ -38,6 +39,7 @@ void load_pattern() {
 			keys[n].flight = flight;
 			n++;
 		}
+		*pattern_size = n;
 		fclose(fptr);
 	} else {
 		// file doesn't exist
@@ -93,6 +95,34 @@ void parse_password(double raw[MAX_KEYS][3], key_press pw[MAX_KEYS]) {
 	}
 }
 
+int check_password(key_press expected[MAX_KEYS], key_press recorded[MAX_KEYS], size_t expected_size, size_t recorded_size) {
+	if (expected_size != recorded_size) {
+		printf("ERROR: Expected and recorded sizes do not match.\n");
+		return 0;
+	}
+	
+	double total_deviation = 0.0;
+	for (int i = 0; i < recorded_size; i++) {
+		if (expected[i].key != recorded[i].key) {
+			printf("ERROR: Incorrect password.\n");
+			return 0;
+		}
+		total_deviation += fabs(expected[i].dwell - recorded[i].dwell);
+		total_deviation += fabs(expected[i].flight - recorded[i].flight);
+	}
+	total_deviation /= recorded_size * 2;
+	printf("Deviation: %lf; Tolerance: %lf\n", total_deviation, TOLERANCE);
+	if (total_deviation > TOLERANCE) {
+		printf("ERROR: Incorrect typing pattern.\n");
+		return 0;
+	}
+	for (int i = 0; i < recorded_size; i++) {
+		expected[i].dwell = (recorded[i].dwell + (.expected[i].dwell * 3)) / 4;
+		expected[i].flight = (recorded[i].flight + (expected[i].flight * 3)) / 4;
+	}
+	return 1;
+}
+
 double get_time_in_seconds(struct timespec *ts) {
 	return (double)ts->tv_sec + (double)ts->tv_nsec / 1000000000.0;
 }
@@ -110,6 +140,9 @@ int main() {
 	double timestamps[MAX_KEYS][3] = {0.0};
 	key_press recorded[MAX_KEYS];
 	size_t n = 0;
+	key_press expected[MAX_KEYS];
+	size_t expected_size;
+	load_pattern(expected, &expected_size);
 
 	while (read(kbd_fd, &ev, sizeof(struct input_event)) > 0) {
 		if (ev.type == EV_KEY) {
@@ -119,7 +152,13 @@ int main() {
 			}
 			else if (ev.value == 0) { // key up
 				if (ev.code == KEY_ENTER) break;
-				if (down_timestamps[ev.code] != 0.0) {
+				else if (ev.code == KEY_BACKSPACE) {
+					memset(down_timestamps, 0, sizeof(down_timestamps));
+					memset(timestamps, 0, sizeof(timestamps));
+					memset(recorded, 0, sizeof(recorded));
+					n = 0;
+				}
+				else if (down_timestamps[ev.code] != 0.0) {
 					timestamps[n][0] = (double) ev.code;
 					timestamps[n][1] = down_timestamps[ev.code];
 					timestamps[n][2] = timestamp;
@@ -129,5 +168,12 @@ int main() {
 			}
 		}
 	}
+
 	parse_password(timestamps, recorded);
+	if (expected_size == 0) {
+		// save password and exit
+	} else {
+		int valid = check_password(expected, recorded, expected_size, n);
+		printf("%d", valid);
+	}
 }
