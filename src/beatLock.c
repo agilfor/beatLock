@@ -117,7 +117,7 @@ int check_password(key_press expected[MAX_KEYS], key_press recorded[MAX_KEYS], s
 		return 0;
 	}
 	for (int i = 0; i < recorded_size; i++) {
-		expected[i].dwell = (recorded[i].dwell + (.expected[i].dwell * 3)) / 4;
+		expected[i].dwell = (recorded[i].dwell + (expected[i].dwell * 3)) / 4;
 		expected[i].flight = (recorded[i].flight + (expected[i].flight * 3)) / 4;
 	}
 	return 1;
