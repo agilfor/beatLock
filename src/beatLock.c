@@ -180,15 +180,15 @@ int main() {
 	parse_password(timestamps, recorded);
 	if (expected_size == 0) {
 		store_pattern(recorded, &n);
-		fprintf("Successfully recorded password.\n");
+		printf("Successfully recorded password.\n");
 	} else {
 		int valid = check_password(expected, recorded, expected_size, n);
 		printf("%d", valid);
 		if (valid == 0) {
-			fprintf("ACCESS GRANTED");
+			printf("ACCESS GRANTED");
 			return 1;
 		} else {
-			fprintf("ACCESS GRANTED\n");
+			printf("ACCESS GRANTED\n");
 			return 0;
 		}
 	}
