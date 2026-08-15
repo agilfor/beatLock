@@ -106,8 +106,8 @@ int main() {
 	}
 
 	struct input_event ev;
-	double down_timestamps[KEY_MAX];
-	double timestamps[MAX_KEYS][3];
+	double down_timestamps[KEY_MAX] = {0.0};
+	double timestamps[MAX_KEYS][3] = {0.0};
 	key_press recorded[MAX_KEYS];
 	size_t n = 0;
 
@@ -118,6 +118,7 @@ int main() {
 				down_timestamps[ev.code] = timestamp;
 			}
 			else if (ev.value == 0) { // key up
+				if (ev.code == KEY_ENTER) break;
 				if (down_timestamps[ev.code] != 0.0) {
 					timestamps[n][0] = (double) ev.code;
 					timestamps[n][1] = down_timestamps[ev.code];
