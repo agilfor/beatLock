@@ -29,7 +29,6 @@ void load_pattern(key_press target_pattern[MAX_KEYS], size_t *pattern_size) {
 	if (access(PATH, F_OK) == 0) {
 		FILE *fptr;
 		fptr = fopen(PATH, "r");
-		memset(target_pattern, 0, sizeof(target_pattern));
 		size_t n = 0;
 		int c;
 		double dwell, flight;
