@@ -63,9 +63,11 @@ install: all
 	@install -D -m 4755 -o $(INSTALL_USER) -g $(INSTALL_GROUP) $(SETUP_TOOL) $(BIN_DIR)/$(SETUP_TOOL)
 	@echo "[✓] Installed setup tool: $(BIN_DIR)/$(SETUP_TOOL) (setuid)"
 	
+	@./src/enable-beatlock.sh
+
 	@echo ""
 	@echo "[✓] Installation complete!"
-	@echo "    Next step: sudo $(BIN_DIR)/$(SETUP_TOOL) <username>"
+	@echo "    Next step: sudo $(SETUP_TOOL) <username>"
 
 # --- Secure Uninstall ---
 uninstall:
