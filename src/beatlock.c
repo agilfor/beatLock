@@ -151,7 +151,7 @@ static int write_pattern_file(pam_handle_t *pamh, key_press final_pattern[MAX_KE
 
     struct stat st;
     if (stat(filepath, &st) != 0 || st.st_uid != 0 || (st.st_mode & 0777) != 0600) {
-        syslog(LOG_ERR, "beatLock: pattern file not correctly secured\n");
+        syslog(LOG_ERR, "beatLock: pattern file not correctly secured");
         unlink(filepath);
         return -1;
     }
