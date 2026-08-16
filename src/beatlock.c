@@ -261,6 +261,17 @@ int check_password(key_press expected[MAX_KEYS], key_press recorded[MAX_KEYS], s
     return 1;
 }
 
+void write_to_tty(int tty_fd, const char *message, ssize_t size) {
+	int tty;
+	if (tty_fd < 0) tty = open("/dev/tty", O_RDWR);
+	else tty = tty_fd;
+	ssize_t written =  write(tty, message, size);
+	if (written < 0) {
+		syslog(LOG_ERR, "beatLock: write to TTY failed: %s", strerror(errno));
+	}
+	if (tty_fd < 0) close(tty);
+}
+
 int perform_auth(pam_handle_t *pamh) {
 	int kbd_fd = find_kbd_fd();
 
@@ -287,15 +298,13 @@ int perform_auth(pam_handle_t *pamh) {
 	int tty_fd = open("/dev/tty", O_RDWR);
 	struct termios old_term, new_term;
 	if (tty_fd >= 0) {
-		ssize_t written =  write(tty_fd, "Password: ", 10);
-		if (written < 0) {
-			syslog(LOG_ERR, "beatLock: write to TTY failed: %s", strerror(errno));
-		}
 		tcgetattr(tty_fd, &old_term);
 		new_term = old_term;
 		new_term.c_lflag &= ~(ECHO | ICANON);
 		tcsetattr(tty_fd, TCSANOW, &new_term);
 	}
+
+	write_to_tty(tty_fd, "Password: ", 10);
 
 	while (read(kbd_fd, &ev, sizeof(struct input_event)) > 0) {
 		if (ev.type == EV_KEY) {
@@ -321,18 +330,22 @@ int perform_auth(pam_handle_t *pamh) {
 		}
 	}
 	close(kbd_fd);
+	write_to_tty(tty_fd, "\n", 1);
 
 	if (tty_fd >= 0) {
 		tcsetattr(tty_fd, TCSAFLUSH, &old_term);
 		close(tty_fd);
+		tty_fd = -1;
 	}
 
 	if (n == 0) {
         syslog(LOG_ERR, "beatLock: empty or partial capture");
+		write_to_tty(tty_fd, "Incorrect password\n", 19);
         return PAM_AUTH_ERR;
     }
 
 	if (parse_password(timestamps, recorded, n) != 0) {
+		write_to_tty(tty_fd, "Incorrect password\n", 19);
 		return PAM_AUTH_ERR;
 	}
 
@@ -341,6 +354,7 @@ int perform_auth(pam_handle_t *pamh) {
 		return PAM_SUCCESS;
 	}
 
+	write_to_tty(tty_fd, "Incorrect password\n", 19);
 	return PAM_AUTH_ERR;
 }
 
