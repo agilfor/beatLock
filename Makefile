@@ -52,17 +52,14 @@ install: all
 	fi
 	@echo "[*] Installing beatLock..."
 	
-	# Create config directory with secure permissions
 	@mkdir -p -m 700 $(CONFIG_DIR)
 	@chown $(INSTALL_USER):$(INSTALL_GROUP) $(CONFIG_DIR)
 	@echo "[✓] Created config directory: $(CONFIG_DIR)"
 	
-	# Install PAM module
 	@install -D -m 644 $(PAM_MODULE) $(PAM_DIR)/$(PAM_MODULE)
 	@chown $(INSTALL_USER):$(INSTALL_GROUP) $(PAM_DIR)/$(PAM_MODULE)
 	@echo "[✓] Installed PAM module: $(PAM_DIR)/$(PAM_MODULE)"
 	
-	# Install setup tool with restricted permissions
 	@install -D -m 4755 -o $(INSTALL_USER) -g $(INSTALL_GROUP) $(SETUP_TOOL) $(BIN_DIR)/$(SETUP_TOOL)
 	@echo "[✓] Installed setup tool: $(BIN_DIR)/$(SETUP_TOOL) (setuid)"
 	
