@@ -103,6 +103,68 @@ void load_pattern(pam_handle_t *pamh, key_press target_pattern[MAX_KEYS], size_t
 	*pattern_size = n;
 }
 
+static int write_pattern_file(pam_handle_t pamh, key_press final_pattern[MAX_KEYS], size_t length) {
+    char filepath[512];
+    
+	if (pattern_path_for_user(pamh, filepath, sizeof(filepath)) != 0) {
+        syslog(LOG_ERR, "beatLock: invalid username");
+        return -1;
+    }
+
+	const char *username = NULL;
+	pam_get_user(pamh, &username, NULL);
+
+    char tmp_path[512];
+    snprintf(tmp_path, sizeof(tmp_path), "%s/.%s.pattern.tmp", BASE_DIR, username);
+
+    FILE *fptr = fopen(tmp_path, "w");
+    if (!fptr) {
+        syslog(LOG_ERR, "beatLock: could not open %s for writing", tmp_path);
+        return -1;
+    }
+
+    for (size_t i = 0; i < length; i++) {
+        fprintf(fptr, "%d %lf %lf\n",
+                final_pattern[i].key,
+                final_pattern[i].dwell,
+                final_pattern[i].flight);
+    }
+
+    fflush(fptr);
+    if (fchmod(fileno(fptr), 0600) != 0) {
+        syslog(LOG_ERR, "beatLock: fchmod failed: %s", strerror(errno));
+        fclose(fptr);
+        unlink(tmp_path);
+        return -1;
+    }
+
+    if (fsync(fileno(fptr)) != 0) {
+        syslog(LOG_ERR, "batLock: fsync failed: %s", strerror(errno));
+        fclose(fptr);
+        unlink(tmp_path);
+        return -1;
+    }
+
+    fclose(fptr);
+
+    if (rename(tmp_path, filepath) != 0) {
+        syslog(LOG_ERR, "beatLock: rename failed: %s", strerror(errno));
+        unlink(tmp_path);
+        return -1;
+    }
+
+    struct stat st;
+    if (stat(filepath, &st) != 0 || st.st_uid != 0 || (st.st_mode & 0777) != 0600) {
+        syslog(LOG_ERR, "beatLock: pattern file not correctly secured\n");
+        unlink(filepath);
+        return -1;
+    }
+
+	syslog(LOG_INFO, "beatLock: successfully evolved typing pattern for user '%s'", username);
+
+    return 0;
+}
+
 int find_kbd_fd() {
 	struct dirent *entry;
 	DIR *dp = opendir("/dev/input");
@@ -139,7 +201,7 @@ int find_kbd_fd() {
             continue;
         }
 		
-		syslog(LOG_INFO, "beatLock: Found valid keyboard at: %s", path);
+		syslog(LOG_INFO, "beatLock: found valid keyboard at: %s", path);
         fd = temp_fd;
         int flags = fcntl(fd, F_GETFL, 0);
         fcntl(fd, F_SETFL, flags & ~O_NONBLOCK);
@@ -175,14 +237,14 @@ int check_password(key_press expected[MAX_KEYS], key_press recorded[MAX_KEYS], s
     }
 
     if (expected_size != recorded_size) {
-        syslog(LOG_ERR, "beatLock: Expected and recorded sizes do not match.");
+        syslog(LOG_ERR, "beatLock: expected and recorded sizes do not match.");
         return 0;
     }
 
     double total_deviation = 0.0;
     for (size_t i = 0; i < recorded_size; i++) {
         if (expected[i].key != recorded[i].key) {
-            syslog(LOG_ERR, "beatLock: Incorrect password.");
+            syslog(LOG_ERR, "beatLock: incorrect password.");
             return 0;
         }
         total_deviation += fabs(expected[i].dwell - recorded[i].dwell);
@@ -191,15 +253,14 @@ int check_password(key_press expected[MAX_KEYS], key_press recorded[MAX_KEYS], s
 
     total_deviation /= recorded_size * 2.0;
     if (total_deviation > TOLERANCE) {
-        syslog(LOG_ERR, "beatLock: Incorrect typing pattern.");
+        syslog(LOG_ERR, "beatLock: incorrect typing pattern.");
         return 0;
     }
 
-	// TBD: beatLock could 'evolve' with the user over time (?)
-    // for (size_t i = 0; i < recorded_size; i++) {
-    //     expected[i].dwell = (recorded[i].dwell + (expected[i].dwell * 3.0)) / 4.0;
-    //     expected[i].flight = (recorded[i].flight + (expected[i].flight * 3.0)) / 4.0;
-    // }
+    for (size_t i = 0; i < recorded_size; i++) {
+        expected[i].dwell = (recorded[i].dwell + (expected[i].dwell * 3.0)) / 4.0;
+        expected[i].flight = (recorded[i].flight + (expected[i].flight * 3.0)) / 4.0;
+    }
 
     return 1;
 }
@@ -208,7 +269,7 @@ int perform_auth(pam_handle_t *pamh) {
 	int kbd_fd = find_kbd_fd();
 
 	if (kbd_fd == -1) {
-		syslog(LOG_ERR, "beatLock: Could not locate input source.");
+		syslog(LOG_ERR, "beatLock: could not locate input source.");
 		return PAM_AUTH_ERR;
 	}
 
@@ -276,6 +337,7 @@ int perform_auth(pam_handle_t *pamh) {
 	}
 
 	if (check_password(expected, recorded, expected_size, n) == 1) {
+		write_pattern_file(pamh, expected, expected_size);
 		return PAM_SUCCESS;
 	}
 
