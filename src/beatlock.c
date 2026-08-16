@@ -287,6 +287,7 @@ int perform_auth(pam_handle_t *pamh) {
 	int tty_fd = open("/dev/tty", O_RDWR);
 	struct termios old_term, new_term;
 	if (tty_fd >= 0) {
+		write(tty_fd, "Password: ", 28)
 		tcgetattr(tty_fd, &old_term);
 		new_term = old_term;
 		new_term.c_lflag &= ~(ECHO | ICANON);
