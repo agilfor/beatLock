@@ -10,6 +10,7 @@
 #include <math.h>
 #include <syslog.h>
 #include <sys/stat.h>
+#include <errno.h>
 
 #define PAM_SM_AUTH
 #include <security/pam_appl.h>
@@ -139,7 +140,7 @@ static int write_pattern_file(pam_handle_t pamh, key_press final_pattern[MAX_KEY
     }
 
     if (fsync(fileno(fptr)) != 0) {
-        syslog(LOG_ERR, "batLock: fsync failed: %s", strerror(errno));
+        syslog(LOG_ERR, "beatLock: fsync failed: %s", strerror(errno));
         fclose(fptr);
         unlink(tmp_path);
         return -1;
