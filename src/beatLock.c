@@ -171,7 +171,7 @@ int find_kbd_fd() {
 	DIR *dp = opendir("/dev/input");
 	if (dp == NULL) return -1;
 	int fd = -1;
-	char path[256];
+	char path[512];
 	unsigned char ev_bits[EV_MAX / 8 + 1];
 	unsigned char key_bits[KEY_MAX / 8 + 1];
 	while ((entry = readdir(dp))) {
@@ -285,7 +285,7 @@ int perform_auth(pam_handle_t *pamh) {
 
 	struct input_event ev;
 	double down_timestamps[KEY_MAX] = {0.0};
-	double timestamps[MAX_KEYS][3] = {0.0};
+	double timestamps[MAX_KEYS][3] = {{0.0}};
 	key_press recorded[MAX_KEYS];
 	size_t n = 0;
 
@@ -346,9 +346,18 @@ int perform_auth(pam_handle_t *pamh) {
 }
 
 PAM_EXTERN int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc, const char **argv) {
+	(void) flags;
+	(void) argc;
+	(void) argv;
+
 	return perform_auth(pamh);
 }
 
 PAM_EXTERN int pam_sm_setcred(pam_handle_t *pamh, int flags, int argc, const char **argv) {
+	(void) pamh;
+	(void) flags;
+	(void) argc;
+	(void) argv;
+
 	return PAM_SUCCESS;
 }

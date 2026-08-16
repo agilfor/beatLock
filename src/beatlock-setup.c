@@ -42,7 +42,7 @@ int find_kbd_fd() {
 	DIR *dp = opendir("/dev/input");
 	if (dp == NULL) return -1;
 	int fd = -1;
-	char path[256];
+	char path[512];
 	unsigned char ev_bits[EV_MAX / 8 + 1];
 	unsigned char key_bits[KEY_MAX / 8 + 1];
 	while ((entry = readdir(dp))) {
@@ -250,7 +250,7 @@ int main(int argc, char *argv[]) {
 
         struct input_event ev;
         double down_timestamps[KEY_MAX] = {0.0};
-        double timestamps[MAX_KEYS][3] = {0.0};
+        double timestamps[MAX_KEYS][3] = {{0.0}};
         size_t n = 0;
 
         while (read(kbd_fd, &ev, sizeof(struct input_event)) > 0) {
