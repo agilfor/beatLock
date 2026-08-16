@@ -31,9 +31,18 @@ This biometric authentication method makes passwords significantly harder to cra
 ### Quickstart
 
 ```bash
+git clone https://github.com/agilfor/beatLock.git
+cd beatLock
 make all
 sudo make install
 sudo beatlock-setup <username>
+```
+
+### Clone
+
+```bash
+git clone https://github.com/agilfor/beatLock.git
+cd beatLock
 ```
 
 ### Build
@@ -107,7 +116,7 @@ make clean
 make debug
 ```
 
-## Experimental
+### Experimental
 
 **WARNING: The following is experimental and may lead to a broken Linux. Proceed at your own risk and only if you have adequate knowledge of what the following steps entail.**
 
