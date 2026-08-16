@@ -16,7 +16,7 @@ This biometric authentication method makes passwords significantly harder to cra
 - Rhythm-based authentication using keystroke dynamics
 - Integrates seamlessly with `sudo` via PAM on Linux
 - Per-user typing patterns stored securely
-- 3 authentication attempts before lockour
+- 3 authentication attempts before lockout
 - No additional dependencies beyond PAM
 - Evolution to match changes in typing rhythm over time
 
@@ -96,6 +96,10 @@ Your pattern will be stored in `/etc/security/beatlock/<username>.pattern`. Auth
 - Stored patterns are secure if and only if the proper file permissions are maintained (these will be set up correctly on install)
 - beatLock supports passwords with a maximum length of 255 characters
 - after 3 failed attempts, beatLock by default falls back to the default PAM
+
+## Web Demo
+
+There is a web demo available to see an interactive visualization of beatLock rhythm-based authentication. Note that this is only a demo to demonstrate the functionality, with none of the actual security mechanisms. To view it simply open `web-demo/index.html` in a browser.
 
 ## Development
 

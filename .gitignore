@@ -1,2 +1,25 @@
 .vscode
 .DS_Store
+
+# Build artifacts
+*.o
+*.so
+*.a
+pam_beatlock.so
+beatlock-setup
+
+# Debug files
+*.dSYM/
+*.su
+*.gch
+*.gda
+
+# IDE
+.idea/
+*.swp
+*.swo
+*~
+
+# System
+.env
+*.log
