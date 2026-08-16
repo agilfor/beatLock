@@ -27,6 +27,8 @@ int global_tty_fd = -1;
 struct termios global_old_term;
 
 void handle_sigint(int sig) {
+    (void) sig;
+
 	printf("\n\n[!] Setup interrupted by user. Restoring terminal...\n");
 
 	if (global_tty_fd >= 0) {
@@ -100,7 +102,7 @@ void parse_password(double raw[MAX_KEYS][3], key_press pw[MAX_KEYS], size_t len)
 }
 
 int check_matching(key_press pw1[MAX_KEYS], key_press pw2[MAX_KEYS], size_t n) {
-	for (int i = 0; i < n; i++) {
+	for (size_t i = 0; i < n; i++) {
 		if (
 			pw1[i].key != pw2[i].key ||
 			fabs(pw1[i].dwell - pw2[i].dwell) > THRESHOLD ||
