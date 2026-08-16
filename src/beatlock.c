@@ -104,7 +104,7 @@ void load_pattern(pam_handle_t *pamh, key_press target_pattern[MAX_KEYS], size_t
 	*pattern_size = n;
 }
 
-static int write_pattern_file(pam_handle_t pamh, key_press final_pattern[MAX_KEYS], size_t length) {
+static int write_pattern_file(pam_handle_t *pamh, key_press final_pattern[MAX_KEYS], size_t length) {
     char filepath[512];
     
 	if (pattern_path_for_user(pamh, filepath, sizeof(filepath)) != 0) {
