@@ -33,29 +33,15 @@ $(SETUP_TOOL): src/beatlock-setup.c
 
 # --- Dependency Checking ---
 check-deps:
-	@echo "[*] Checking dependencies..."
-	@if ! command -v gcc >/dev/null 2>&1; then \
-		echo "[!] ERROR: gcc not found"; \
-		exit 1; \
-	fi
-	@if ! command -v pkg-config >/dev/null 2>&1; then \
-		echo "[!] ERROR: pkg-config not found"; \
-		exit 1; \
-	fi
-	@if ! pkg-config --exists libpam; then \
-		echo "[!] ERROR: libpam not found"; \
+	@if ! [ -f /usr/include/security/pam_appl.h ]; then \
+		echo "[!] ERROR: PAM development files not found"; \
 		echo ""; \
-		echo "Install on Ubuntu/Debian: sudo apt-get install libpam0g-dev"; \
 		echo "Install on Arch:          sudo pacman -S pam"; \
+		echo "Install on Ubuntu/Debian: sudo apt-get install libpam0g-dev"; \
 		echo "Install on Fedora/RHEL:   sudo dnf install pam-devel"; \
-		echo "Install on Alpine:        sudo apk add linux-pam-dev"; \
 		exit 1; \
 	fi
-	@if ! command -v ld >/dev/null 2>&1; then \
-		echo "[!] ERROR: binutils (ld) not found"; \
-		exit 1; \
-	fi
-	@echo "[✓] All dependencies found"
+	@echo "[✓] PAM headers found"
 
 # --- Install ---
 install: all
