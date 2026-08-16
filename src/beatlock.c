@@ -76,11 +76,6 @@ void load_pattern(pam_handle_t *pamh, key_press target_pattern[MAX_KEYS], size_t
 		return;
 	}
 
-	if (access(filepath, F_OK) != 0) {
-        syslog(LOG_ERR, "beatLock: pattern file not found: %s", filepath);
-        return;
-    }
-
 	if (validate_pattern_file(filepath) != 0) {
     	return;
 	}
