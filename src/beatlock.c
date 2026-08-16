@@ -272,7 +272,12 @@ void write_to_tty(int tty_fd, const char *message, ssize_t size) {
 	if (tty_fd < 0) close(tty);
 }
 
-int perform_auth(pam_handle_t *pamh) {
+int perform_auth(pam_handle_t *pamh, int attempt) {
+	if (attempt > 3) {
+		syslog(LOG_ERR, "beatLock: maximum authentication attempts exceeded");
+		return PAM_AUTH_ERR;
+	}
+
 	int kbd_fd = find_kbd_fd();
 
 	if (kbd_fd == -1) {
@@ -335,18 +340,17 @@ int perform_auth(pam_handle_t *pamh) {
 	if (tty_fd >= 0) {
 		tcsetattr(tty_fd, TCSAFLUSH, &old_term);
 		close(tty_fd);
-		tty_fd = -1;
 	}
 
 	if (n == 0) {
         syslog(LOG_ERR, "beatLock: empty or partial capture");
-		write_to_tty(tty_fd, "Incorrect password\n", 19);
-        return PAM_AUTH_ERR;
+		write_to_tty(-1, "Incorrect password\n", 19);
+        return perform_auth(pamh, attempt + 1);
     }
 
 	if (parse_password(timestamps, recorded, n) != 0) {
-		write_to_tty(tty_fd, "Incorrect password\n", 19);
-		return PAM_AUTH_ERR;
+		write_to_tty(-1, "Incorrect password\n", 19);
+		return perform_auth(pamh, attempt + 1);
 	}
 
 	if (check_password(expected, recorded, expected_size, n) == 1) {
@@ -354,8 +358,8 @@ int perform_auth(pam_handle_t *pamh) {
 		return PAM_SUCCESS;
 	}
 
-	write_to_tty(tty_fd, "Incorrect password\n", 19);
-	return PAM_AUTH_ERR;
+	write_to_tty(-1, "Incorrect password\n", 19);
+	return perform_auth(pamh, attempt + 1);
 }
 
 PAM_EXTERN int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc, const char **argv) {
@@ -363,7 +367,7 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc, cons
 	(void) argc;
 	(void) argv;
 
-	return perform_auth(pamh);
+	return perform_auth(pamh, 1);
 }
 
 PAM_EXTERN int pam_sm_setcred(pam_handle_t *pamh, int flags, int argc, const char **argv) {
