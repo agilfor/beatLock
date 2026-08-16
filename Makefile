@@ -76,7 +76,7 @@ uninstall:
 		exit 1; \
 	fi
 	@echo "[*] Uninstalling beatLock..."
-	@./src/disabled-beatlock.sh
+	@./src/disable-beatlock.sh
 	@rm -f $(PAM_DIR)/$(PAM_MODULE)
 	@rm -f $(BIN_DIR)/$(SETUP_TOOL)
 	@rm -rf $(CONFIG_DIR)
