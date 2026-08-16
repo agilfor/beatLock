@@ -287,7 +287,7 @@ int perform_auth(pam_handle_t *pamh) {
 	int tty_fd = open("/dev/tty", O_RDWR);
 	struct termios old_term, new_term;
 	if (tty_fd >= 0) {
-		ssize_t written =  write(tty_fd, "Password: ", 28);
+		ssize_t written =  write(tty_fd, "Password: ", 10);
 		if (written < 0) {
 			syslog(LOG_ERR, "beatLock: write to TTY failed: %s", strerror(errno));
 		}
